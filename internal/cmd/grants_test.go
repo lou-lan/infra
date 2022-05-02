@@ -26,13 +26,13 @@ func TestGrantsAddCmd(t *testing.T) {
 		handler := func(resp http.ResponseWriter, req *http.Request) {
 			query := req.URL.Query()
 
-			if requestMatches(req, http.MethodGet, "/v1/identities") {
+			if requestMatches(req, http.MethodGet, "/v1/users") {
 				resp.WriteHeader(http.StatusOK)
 				switch query.Get("name") {
 				case "existing@example.com":
-					writeResponse(t, resp, []api.Identity{{ID: 3000}})
+					writeResponse(t, resp, []api.User{{ID: 3000}})
 				case "existingMachine":
-					writeResponse(t, resp, []api.Identity{{ID: 3001}})
+					writeResponse(t, resp, []api.User{{ID: 3001}})
 				default:
 					writeResponse(t, resp, map[string]interface{}{})
 				}
@@ -65,7 +65,7 @@ func TestGrantsAddCmd(t *testing.T) {
 		srv := httptest.NewTLSServer(http.HandlerFunc(handler))
 		t.Cleanup(srv.Close)
 
-		cfg := newTestClientConfig(srv, api.Identity{})
+		cfg := newTestClientConfig(srv, api.User{})
 		err := writeConfig(&cfg)
 		assert.NilError(t, err)
 		return requestCh
@@ -134,12 +134,12 @@ func TestGrantRemoveCmd(t *testing.T) {
 		handler := func(resp http.ResponseWriter, req *http.Request) {
 			query := req.URL.Query()
 
-			if requestMatches(req, http.MethodGet, "/v1/identities") {
+			if requestMatches(req, http.MethodGet, "/v1/users") {
 				resp.WriteHeader(http.StatusOK)
 				if query.Get("name") == "existing@example.com" {
-					writeResponse(t, resp, []api.Identity{{ID: 3000}})
+					writeResponse(t, resp, []api.User{{ID: 3000}})
 				} else {
-					writeResponse(t, resp, []api.Identity{})
+					writeResponse(t, resp, []api.User{})
 				}
 				return
 			}
@@ -202,7 +202,7 @@ func TestGrantRemoveCmd(t *testing.T) {
 		srv := httptest.NewTLSServer(http.HandlerFunc(handler))
 		t.Cleanup(srv.Close)
 
-		cfg := newTestClientConfig(srv, api.Identity{})
+		cfg := newTestClientConfig(srv, api.User{})
 		err := writeConfig(&cfg)
 		assert.NilError(t, err)
 		return requestCh

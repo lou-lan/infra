@@ -195,7 +195,7 @@ func addGrant(cli *CLI, cmdOptions grantsCmdOptions) error {
 
 	pid, err := getSubjectPolymorphicID(client, cmdOptions.Identity, cmdOptions.IsGroup)
 	if err != nil {
-		if !errors.Is(err, ErrIdentityNotFound) {
+		if !errors.Is(err, ErrUserNotFound) {
 			return err
 		}
 		if cmdOptions.IsGroup {
@@ -225,7 +225,7 @@ func addGrant(cli *CLI, cmdOptions grantsCmdOptions) error {
 	return nil
 }
 
-// getSubjectPolymorphicID gets the ID for either the group or identity in the subject of a grant
+// getSubjectPolymorphicID gets the ID for either the group or user in the subject of a grant
 func getSubjectPolymorphicID(client *api.Client, subject string, isGroup bool) (uid.PolymorphicID, error) {
 	if isGroup {
 		identity, err := GetGroupByName(client, subject)
@@ -235,7 +235,7 @@ func getSubjectPolymorphicID(client *api.Client, subject string, isGroup bool) (
 		return uid.NewGroupPolymorphicID(identity.ID), nil
 	}
 
-	identity, err := GetIdentityByName(client, subject)
+	identity, err := GetUserByName(client, subject)
 	if err != nil {
 		return "", err
 	}
@@ -249,7 +249,7 @@ func GetGroupByName(client *api.Client, name string) (*api.Group, error) {
 	}
 
 	if len(groups) == 0 {
-		return nil, ErrIdentityNotFound
+		return nil, ErrUserNotFound
 	}
 
 	if len(groups) != 1 {
@@ -266,7 +266,7 @@ func subjectNameFromGrant(client *api.Client, g api.Grant) (name string, err err
 	}
 
 	if g.Subject.IsIdentity() {
-		identity, err := client.GetIdentity(id)
+		identity, err := client.GetUser(id)
 		if err != nil {
 			return "", err
 		}
@@ -287,11 +287,11 @@ func subjectNameFromGrant(client *api.Client, g api.Grant) (name string, err err
 }
 
 func addGrantIdentity(client *api.Client, name string) (uid.PolymorphicID, error) {
-	created, err := CreateIdentity(&api.CreateIdentityRequest{Name: name})
+	created, err := CreateUser(&api.CreateUserRequest{Name: name})
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("New unlinked identity %q added to Infra\n", name)
+	fmt.Printf("New unlinked user %q added to Infra\n", name)
 
 	return uid.NewIdentityPolymorphicID(created.ID), nil
 }

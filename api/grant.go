@@ -8,10 +8,10 @@ type Grant struct {
 	ID uid.ID `json:"id"`
 
 	Created   Time   `json:"created"`
-	CreatedBy uid.ID `json:"created_by" note:"id of the identity that created the grant"`
+	CreatedBy uid.ID `json:"created_by" note:"id of the user that created the grant"`
 	Updated   Time   `json:"updated"`
 
-	Subject   uid.PolymorphicID `json:"subject" note:"a polymorphic field expecting an identity or group ID"`
+	Subject   uid.PolymorphicID `json:"subject" note:"a polymorphic field expecting a user or group ID"`
 	Privilege string            `json:"privilege" note:"a role or permission"`
 	Resource  string            `json:"resource" note:"a resource name in Infra's Universal Resource Notation"`
 }
@@ -23,7 +23,7 @@ type ListGrantsRequest struct {
 }
 
 type CreateGrantRequest struct {
-	Subject   uid.PolymorphicID `json:"subject" validate:"required" note:"a polymorphic field expecting an identity or group ID"`
+	Subject   uid.PolymorphicID `json:"subject" validate:"required" note:"a polymorphic field expecting a user or group ID"`
 	Privilege string            `json:"privilege" validate:"required" example:"view" note:"a role or permission"`
 	Resource  string            `json:"resource" validate:"required" example:"kubernetes.production" note:"a resource name in Infra's Universal Resource Notation"`
 }

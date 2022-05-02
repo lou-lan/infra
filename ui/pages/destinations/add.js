@@ -92,7 +92,7 @@ export default function () {
     setConnectorFullName(destinationName)
     setNumDestinations(destinations.filter((item) => item.name === name).length)
 
-    fetch('/v1/identities?name=connector')
+    fetch('/v1/users?name=connector')
       .then((response) => response.json())
       .then((data) => {
         const { id } = data[0]

@@ -302,7 +302,7 @@ func updateUserPassword(client *api.Client, pid uid.PolymorphicID, oldPassword s
 		return fmt.Errorf("update user id login: %w", err)
 	}
 
-	if _, err := client.UpdateIdentity(&api.UpdateIdentityRequest{ID: userID, Password: newPassword}); err != nil {
+	if _, err := client.UpdateUser(&api.UpdateUserRequest{ID: userID, Password: newPassword}); err != nil {
 		return fmt.Errorf("update user login: %w", err)
 	}
 

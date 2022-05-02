@@ -16,12 +16,14 @@ type AccessKey struct {
 }
 
 type ListAccessKeysRequest struct {
-	IdentityID uid.ID `form:"identity_id"`
+	UserID     uid.ID `form:"user_id"`
+	IdentityID uid.ID `form:"identity_id"` // #1829: remove, migrate identities to users
 	Name       string `form:"name"`
 }
 
 type CreateAccessKeyRequest struct {
-	IdentityID        uid.ID   `json:"identityID" validate:"required"`
+	UserID            uid.ID   `json:"userID" validate:"required_without=IdentityID"`
+	IdentityID        uid.ID   `json:"identityID" validate:"required_without=UserID"` // #1829: remove, migrate identities to users
 	Name              string   `json:"name" validate:"excludes= "`
 	TTL               Duration `json:"ttl" validate:"required" note:"maximum time valid"`
 	ExtensionDeadline Duration `json:"extensionDeadline,omitempty" validate:"required" note:"How long the key is active for before it needs to be renewed. The access key must be used within this amount of time to renew validity"`

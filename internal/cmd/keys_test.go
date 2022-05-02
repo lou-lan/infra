@@ -24,14 +24,14 @@ func TestKeysAddCmd(t *testing.T) {
 		requestCh := make(chan api.CreateAccessKeyRequest, 1)
 
 		handler := func(resp http.ResponseWriter, req *http.Request) {
-			// the command does a lookup for identity ID
-			if requestMatches(req, http.MethodGet, "/v1/identities") {
+			// the command does a lookup for user ID
+			if requestMatches(req, http.MethodGet, "/v1/users") {
 				if req.URL.Query().Get("name") != "my-user" {
 					resp.WriteHeader(http.StatusBadRequest)
 					return
 				}
 				resp.WriteHeader(http.StatusOK)
-				err := json.NewEncoder(resp).Encode([]*api.Identity{
+				err := json.NewEncoder(resp).Encode([]*api.User{
 					{ID: uid.ID(12345678)},
 				})
 				assert.Check(t, err)
@@ -59,7 +59,7 @@ func TestKeysAddCmd(t *testing.T) {
 		srv := httptest.NewTLSServer(http.HandlerFunc(handler))
 		t.Cleanup(srv.Close)
 
-		cfg := newTestClientConfig(srv, api.Identity{})
+		cfg := newTestClientConfig(srv, api.User{})
 		err := writeConfig(&cfg)
 		assert.NilError(t, err)
 
@@ -75,7 +75,7 @@ func TestKeysAddCmd(t *testing.T) {
 
 		req := <-ch
 		expected := api.CreateAccessKeyRequest{
-			IdentityID:        uid.ID(12345678),
+			UserID:            uid.ID(12345678),
 			Name:              "the-name",
 			TTL:               api.Duration(400 * time.Hour),
 			ExtensionDeadline: api.Duration(5 * time.Hour),
@@ -97,7 +97,7 @@ func TestKeysAddCmd(t *testing.T) {
 	t.Run("without required arguments", func(t *testing.T) {
 		err := Run(context.Background(), "keys", "add")
 		assert.ErrorContains(t, err, `"infra keys add" requires exactly 1 argument`)
-		assert.ErrorContains(t, err, `Usage:  infra keys add IDENTITY`)
+		assert.ErrorContains(t, err, `Usage:  infra keys add USER`)
 	})
 }
 
@@ -116,14 +116,14 @@ func TestKeysListCmd(t *testing.T) {
 		handler := func(resp http.ResponseWriter, req *http.Request) {
 			query := req.URL.Query()
 
-			// the command does a lookup for identity ID
-			if requestMatches(req, http.MethodGet, "/v1/identities") {
+			// the command does a lookup for user ID
+			if requestMatches(req, http.MethodGet, "/v1/users") {
 				if query.Get("name") != "my-user" {
 					resp.WriteHeader(http.StatusBadRequest)
 					return
 				}
 				resp.WriteHeader(http.StatusOK)
-				err := json.NewEncoder(resp).Encode([]*api.Identity{
+				err := json.NewEncoder(resp).Encode([]*api.User{
 					{ID: uid.ID(12345678)},
 				})
 				assert.Check(t, err)
@@ -136,7 +136,7 @@ func TestKeysListCmd(t *testing.T) {
 			}
 
 			resp.WriteHeader(http.StatusOK)
-			if query.Get("identity_id") == uid.ID(12345678).String() {
+			if query.Get("user_id") == uid.ID(12345678).String() {
 				err := json.NewEncoder(resp).Encode([]api.AccessKey{
 					{
 						Name:          "user-key",
@@ -178,7 +178,7 @@ func TestKeysListCmd(t *testing.T) {
 		srv := httptest.NewTLSServer(http.HandlerFunc(handler))
 		t.Cleanup(srv.Close)
 
-		cfg := newTestClientConfig(srv, api.Identity{})
+		cfg := newTestClientConfig(srv, api.User{})
 		err := writeConfig(&cfg)
 		assert.NilError(t, err)
 	}
@@ -193,11 +193,11 @@ func TestKeysListCmd(t *testing.T) {
 		golden.Assert(t, bufs.Stdout.String(), t.Name())
 	})
 
-	t.Run("filter by identity name", func(t *testing.T) {
+	t.Run("filter by user name", func(t *testing.T) {
 		setup(t)
 		ctx, bufs := PatchCLI(context.Background())
 
-		err := Run(ctx, "keys", "list", "--identity", "my-user")
+		err := Run(ctx, "keys", "list", "--user", "my-user")
 		assert.NilError(t, err)
 
 		golden.Assert(t, bufs.Stdout.String(), t.Name())
