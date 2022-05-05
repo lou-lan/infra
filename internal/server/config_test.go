@@ -538,7 +538,7 @@ func TestLoadConfigUpdate(t *testing.T) {
 				ClientSecret: "client-secret",
 			},
 		},
-		Identities: []User{
+		Users: []User{
 			{
 				Name: "r2d2",
 			},
@@ -684,4 +684,51 @@ func TestLoadConfigUpdate(t *testing.T) {
 	var group models.Group
 	err = s.db.Where("name = ?", "Everyone").First(&group).Error
 	assert.NilError(t, err)
+}
+
+func TestParseConfigUpgradesToMostRecent(t *testing.T) {
+	config := ConfigV0dot1{
+		// no version indicates v0.1
+		Providers: []Provider{
+			{
+				Name:         "okta",
+				URL:          "demo.okta.com",
+				ClientID:     "client-id",
+				ClientSecret: "client-secret",
+			},
+		},
+		Grants: []Grant{
+			{
+				User:     "config-upgrade",
+				Role:     "file",
+				Resource: "test-env",
+			},
+		},
+		Identities: []User{
+			{
+				Name: "alice",
+			},
+		},
+	}
+
+	serverConfig := map[string]interface{}{}
+
+	err := mapstructure.Decode(config, &serverConfig)
+	assert.NilError(t, err)
+
+	upgradedConfig, err := ParseConfig(serverConfig)
+	assert.NilError(t, err)
+
+	assert.Equal(t, upgradedConfig.Version, 0.2) // upgrade this as you upgrade the version
+
+	assert.Equal(t, upgradedConfig.Providers[0].Name, "okta")
+	assert.Equal(t, upgradedConfig.Providers[0].URL, "demo.okta.com")
+	assert.Equal(t, upgradedConfig.Providers[0].ClientID, "client-id")
+	assert.Equal(t, upgradedConfig.Providers[0].ClientSecret, "client-secret")
+
+	assert.Equal(t, upgradedConfig.Grants[0].User, "config-upgrade")
+	assert.Equal(t, upgradedConfig.Grants[0].Role, "file")
+	assert.Equal(t, upgradedConfig.Grants[0].Resource, "test-env")
+
+	assert.Equal(t, upgradedConfig.Users[0].Name, "alice")
 }

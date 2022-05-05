@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gocmp "github.com/google/go-cmp/cmp"
+	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"gotest.tools/v3/assert"
 
@@ -21,8 +22,13 @@ import (
 	"github.com/infrahq/infra/uid"
 )
 
-func adminAccessKey(s *Server) string {
-	for _, id := range s.options.Identities {
+func adminAccessKey(t *testing.T, s *Server) string {
+	config, err := ParseConfig(s.options.Config)
+	assert.NilError(t, err)
+
+	err = s.loadConfig(config)
+	assert.NilError(t, err)
+	for _, id := range config.Users {
 		if id.Name == "admin" {
 			return id.AccessKey
 		}
@@ -44,7 +50,7 @@ func TestAPI_ListIdentities(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/v1/users", &buf)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -68,7 +74,7 @@ func TestAPI_ListIdentities(t *testing.T) {
 	run := func(t *testing.T, tc testCase) {
 		req, err := http.NewRequest(http.MethodGet, tc.urlPath, nil)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		if tc.setup != nil {
 			tc.setup(t, req)
@@ -216,7 +222,7 @@ func TestListProviders(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "/v1/providers", nil)
 	assert.NilError(t, err)
 
-	req.Header.Add("Authorization", "Bearer "+adminAccessKey(s))
+	req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, s))
 
 	resp := httptest.NewRecorder()
 	routes.ServeHTTP(resp, req)
@@ -254,7 +260,7 @@ func TestAPI_DeleteProvider(t *testing.T) {
 	run := func(t *testing.T, tc testCase) {
 		req, err := http.NewRequest(http.MethodDelete, tc.urlPath, nil)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		if tc.setup != nil {
 			tc.setup(t, req)
@@ -308,16 +314,26 @@ func TestAPI_DeleteProvider(t *testing.T) {
 
 // withAdminUser may be used with setupServer to setup the server
 // with an admin identity and access key
-func withAdminUser(_ *testing.T, opts *Options) {
-	opts.Identities = append(opts.Identities, User{
+func withAdminUser(t *testing.T, opts *Options) {
+	config, err := ParseConfig(opts.Config)
+	assert.NilError(t, err)
+
+	config.Users = append(config.Users, User{
 		Name:      "admin",
 		AccessKey: "BlgpvURSGF.NdcemBdzxLTGIcjPXwPoZNrb",
 	})
-	opts.Grants = append(opts.Grants, Grant{
+	config.Grants = append(config.Grants, Grant{
 		User:     "admin",
 		Role:     "admin",
 		Resource: "infra",
 	})
+
+	result := map[string]interface{}{}
+
+	err = mapstructure.Decode(config, &result)
+	assert.NilError(t, err)
+
+	opts.Config = result
 }
 
 func TestCreateIdentity(t *testing.T) {
@@ -338,7 +354,7 @@ func TestCreateIdentity(t *testing.T) {
 		body := jsonBody(t, tc.body)
 		req, err := http.NewRequest(http.MethodPost, "/v1/users", body)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		if tc.setup != nil {
 			tc.setup(t, req)
@@ -455,7 +471,7 @@ func TestDeleteUser(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, route, nil)
 	assert.NilError(t, err)
 
-	req.Header.Add("Authorization", "Bearer "+adminAccessKey(s))
+	req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, s))
 
 	resp := httptest.NewRecorder()
 	routes.ServeHTTP(resp, req)
@@ -473,7 +489,7 @@ func TestDeleteUser_NoDeleteInternalIdentities(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, route, nil)
 	assert.NilError(t, err)
 
-	req.Header.Add("Authorization", "Bearer "+adminAccessKey(s))
+	req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, s))
 
 	resp := httptest.NewRecorder()
 	routes.ServeHTTP(resp, req)
@@ -528,9 +544,9 @@ func TestAPI_CreateGrant_Success(t *testing.T) {
 	resp := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/v1/grants", reqBody)
 	assert.NilError(t, err)
-	req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+	req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
-	accessKey, err := data.ValidateAccessKey(srv.db, adminAccessKey(srv))
+	accessKey, err := data.ValidateAccessKey(srv.db, adminAccessKey(t, srv))
 	assert.NilError(t, err)
 
 	runStep(t, "response is ok", func(t *testing.T) {
@@ -562,7 +578,7 @@ func TestAPI_CreateGrant_Success(t *testing.T) {
 		resp := httptest.NewRecorder()
 		req, err := http.NewRequest(http.MethodGet, "/v1/grants/"+newGrant.ID.String(), nil)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		routes.ServeHTTP(resp, req)
 		assert.Equal(t, resp.Code, http.StatusOK)
@@ -664,7 +680,7 @@ func TestAPI_GetUser(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/v1/users", &buf)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -695,7 +711,7 @@ func TestAPI_GetUser(t *testing.T) {
 	run := func(t *testing.T, tc testCase) {
 		req, err := http.NewRequest(http.MethodGet, tc.urlPath, nil)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		if tc.setup != nil {
 			tc.setup(t, req)
@@ -822,7 +838,7 @@ func TestAPI_CreateAccessKey(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/v1/access-keys", &buf)
 		assert.NilError(t, err)
-		req.Header.Add("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Add("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -875,7 +891,7 @@ func TestAPI_DeleteGrant(t *testing.T) {
 		assert.Assert(t, len(infraAdminGrants) == 1)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/grants/%s", infraAdminGrants[0].ID), nil)
-		req.Header.Set("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Set("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -894,7 +910,7 @@ func TestAPI_DeleteGrant(t *testing.T) {
 		assert.NilError(t, err)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/grants/%s", grant2.ID), nil)
-		req.Header.Set("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Set("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -913,7 +929,7 @@ func TestAPI_DeleteGrant(t *testing.T) {
 		assert.NilError(t, err)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/grants/%s", grant2.ID), nil)
-		req.Header.Set("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Set("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
@@ -932,7 +948,7 @@ func TestAPI_DeleteGrant(t *testing.T) {
 		assert.NilError(t, err)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/v1/grants/%s", grant2.ID), nil)
-		req.Header.Set("Authorization", "Bearer "+adminAccessKey(srv))
+		req.Header.Set("Authorization", "Bearer "+adminAccessKey(t, srv))
 
 		resp := httptest.NewRecorder()
 		routes.ServeHTTP(resp, req)
