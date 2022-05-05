@@ -57,7 +57,6 @@ func (s *Server) GenerateRoutes(promRegistry prometheus.Registerer) *gin.Engine 
 	get(a, authn, "/api/users/:id", a.GetUser)
 	put(a, authn, "/api/users/:id", a.UpdateUser)
 	delete(a, authn, "/api/users/:id", a.DeleteUser)
-	get(a, authn, "/api/users/:id/groups", a.ListUserGroups)
 
 	get(a, authn, "/api/access-keys", a.ListAccessKeys)
 	post(a, authn, "/api/access-keys", a.CreateAccessKey)
@@ -103,6 +102,7 @@ func (s *Server) GenerateRoutes(promRegistry prometheus.Registerer) *gin.Engine 
 	// TODO: remove after a couple versions
 	get(a, authn, "/v1/users/:id/grants", a.ListUserGrants)
 	get(a, authn, "/v1/groups/:id/grants", a.ListGroupGrants)
+	get(a, authn, "/v1/users/:id/groups", a.ListUserGroups)
 
 	noAuthn.GET("/v1/machines", removed("v0.9.0"))
 	noAuthn.POST("/v1/machines", removed("v0.9.0"))
