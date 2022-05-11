@@ -26,7 +26,7 @@ const columns = [{
 
     const [open, setOpen] = useState(false)
 
-    const isSelf = admin.subject.replace('i:', '') === auth.id
+    const isSelf = admin.user === auth.id
 
     return (
       <div className='opacity-0 group-hover:opacity-100 flex justify-end text-right'>

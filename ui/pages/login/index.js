@@ -47,10 +47,12 @@ export default function () {
 
       const data = await res.json()
 
+      console.log(data)
+
       if (data.passwordUpdateRequired) {
         router.replace({
           pathname: '/login/finish',
-          query: { id: data.polymorphicID.replace('i:', '') }
+          query: { id: data.id }
         })
         return
       }

@@ -22,7 +22,7 @@ export default function () {
   const [errors, setErrors] = useState({})
   const [name, setName] = useState(kind)
 
-  const provider = providers.find(p => p.name.toLowerCase() === kind)
+  const provider = providers.items.find(p => p.name.toLowerCase() === kind)
 
   if (!provider) {
     router.replace('/providers/add')
