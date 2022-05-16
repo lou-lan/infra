@@ -29,10 +29,10 @@ type apiMigration struct {
 	redirectHandler func(c *gin.Context)
 }
 
-func addRedirect(a *API, method, path, newPath, version string) {
+func addRedirect(a *API, method, oldPath, newPath, version string) {
 	migration := apiMigration{
 		method:   method,
-		path:     path,
+		path:     oldPath,
 		version:  version,
 		redirect: newPath,
 	}
@@ -54,9 +54,16 @@ func addRedirect(a *API, method, path, newPath, version string) {
 func updateRedirectMigrations(a *API, newMigration apiMigration) {
 	// update any existing migrations with the legacy path
 	for i, mig := range a.migrations {
+
+		// TODO: removing this causes test to fail, but this does not seem right.
+		// It causes a bunch of incorrect rewrites to be applied to the new migration.
 		if mig.redirect == "" && mig.path == newMigration.path {
+			fmt.Println("Updating ", a.migrations[i].path, " to ", newMigration.redirect)
 			a.migrations[i].path = newMigration.redirect
 		}
+		// Update any existing redirect migrations, so that the target of the redirect
+		// is the new canonical path.
+		// TODO: but what if there are intermediate paths that are necessary?
 		if mig.redirect != "" && mig.redirect == newMigration.path {
 			a.migrations[i].redirect = newMigration.redirect
 		}
