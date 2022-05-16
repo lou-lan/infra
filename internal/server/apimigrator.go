@@ -26,24 +26,41 @@ type apiMigration struct {
 	redirect        string
 	requestRewrite  func(c *gin.Context)
 	responseRewrite func(c *gin.Context)
+	redirectHandler func(c *gin.Context)
 }
 
 func addRedirect(a *API, method, path, newPath, version string) {
-	// update any existing migrations with the legacy path
-	for i, mig := range a.migrations {
-		if len(mig.redirect) == 0 && mig.path == path {
-			a.migrations[i].path = newPath
-		}
-		if len(mig.redirect) > 0 && mig.redirect == path {
-			a.migrations[i].redirect = newPath
-		}
-	}
-	a.migrations = append(a.migrations, apiMigration{
+	migration := apiMigration{
 		method:   method,
 		path:     path,
 		version:  version,
 		redirect: newPath,
-	})
+	}
+
+	// a closure, so that it uses the updated path when it runs
+	migration.redirectHandler = func(c *gin.Context) {
+		fmt.Printf("Applying redirect path=%v from=%v to=%v\n",
+			c.Request.URL.Path, migration.path, migration.redirect)
+		c.Request.URL.Path = migration.redirect
+		c.Next()
+	}
+
+	updateRedirectMigrations(a, migration)
+	a.migrations = append(a.migrations, migration)
+}
+
+// updateRedirectMigrations updates the a.migrations list so that any existing
+// migrations are applied to the new canonical path for the route.
+func updateRedirectMigrations(a *API, newMigration apiMigration) {
+	// update any existing migrations with the legacy path
+	for i, mig := range a.migrations {
+		if mig.redirect == "" && mig.path == newMigration.path {
+			a.migrations[i].path = newMigration.redirect
+		}
+		if mig.redirect != "" && mig.redirect == newMigration.path {
+			a.migrations[i].redirect = newMigration.redirect
+		}
+	}
 }
 
 func addRequestRewrite[oldReq any, newReq any](a *API, method, path, version string, f func(oldReq) newReq) {
@@ -70,6 +87,9 @@ func addRequestRewrite[oldReq any, newReq any](a *API, method, path, version str
 			}
 
 			newReqObj := f(*oldReqObj)
+
+			fmt.Printf("Applying request rewrite path=%v from=%T to=%T\n",
+				c.Request.URL.Path, oldReqObj, newReqObj)
 
 			rebuildRequest(c, newReqObj)
 
@@ -197,13 +217,6 @@ func addResponseRewrite[newResp any, oldResp any](a *API, method, path, version 
 			}
 		},
 	})
-}
-
-func (m *apiMigration) RedirectHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Request.URL.Path = m.redirect
-		c.Next()
-	}
 }
 
 // responseWriter is made to satisfy gin.ResponseWriter, which is rather greedy with its interface demands

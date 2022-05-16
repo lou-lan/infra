@@ -40,7 +40,8 @@ func (s *Server) GenerateRoutes(promRegistry prometheus.Registerer) *gin.Engine 
 		TimeoutMiddleware(1*time.Minute),
 	)
 
-	a.addRewrites()
+	a.addRequestRewrites()
+	a.addResponseRewrites()
 	a.addRedirects()
 
 	// This group of middleware only applies to non-ui routes
@@ -102,7 +103,6 @@ func (s *Server) GenerateRoutes(promRegistry prometheus.Registerer) *gin.Engine 
 	// TODO: remove after a couple versions
 	get(a, authn, "/v1/users/:id/grants", a.ListUserGrants)
 	get(a, authn, "/v1/groups/:id/grants", a.ListGroupGrants)
-	get(a, authn, "/api/users/:id/groups", a.ListUserGroups)
 
 	noAuthn.GET("/v1/machines", removed("v0.9.0"))
 	noAuthn.POST("/v1/machines", removed("v0.9.0"))
@@ -145,7 +145,7 @@ func get[Req, Res any](a *API, r *gin.RouterGroup, route string, handler ReqResH
 	})
 	r.GET(route, handlers...)
 	for _, migration := range redirectsFor(a, http.MethodGet, fullPath) {
-		handlers = append([]gin.HandlerFunc{migration.RedirectHandler()}, handlers...)
+		handlers = append([]gin.HandlerFunc{migration.redirectHandler}, handlers...)
 		r.GET(migration.path, handlers...)
 	}
 }
@@ -174,7 +174,7 @@ func post[Req, Res any](a *API, r *gin.RouterGroup, route string, handler ReqRes
 
 	r.POST(route, handlers...)
 	for _, migration := range redirectsFor(a, http.MethodPost, fullPath) {
-		handlers = append([]gin.HandlerFunc{migration.RedirectHandler()}, handlers...)
+		handlers = append([]gin.HandlerFunc{migration.redirectHandler}, handlers...)
 		r.POST(migration.path, handlers...)
 	}
 }
@@ -203,7 +203,7 @@ func put[Req, Res any](a *API, r *gin.RouterGroup, route string, handler ReqResH
 
 	r.PUT(route, handlers...)
 	for _, migration := range redirectsFor(a, http.MethodPut, fullPath) {
-		handlers = append([]gin.HandlerFunc{migration.RedirectHandler()}, handlers...)
+		handlers = append([]gin.HandlerFunc{migration.redirectHandler}, handlers...)
 		r.PUT(migration.path, handlers...)
 	}
 }
@@ -233,7 +233,7 @@ func delete[Req any](a *API, r *gin.RouterGroup, route string, handler ReqHandle
 
 	r.DELETE(route, handlers...)
 	for _, migration := range redirectsFor(a, http.MethodDelete, fullPath) {
-		handlers = append([]gin.HandlerFunc{migration.RedirectHandler()}, handlers...)
+		handlers = append([]gin.HandlerFunc{migration.redirectHandler}, handlers...)
 		r.DELETE(migration.path, handlers...)
 	}
 }
@@ -244,6 +244,7 @@ func redirectsFor(a *API, method, path string) []apiMigration {
 		if strings.ToUpper(migration.method) != method {
 			continue
 		}
+		// TODO:
 		if migration.redirect != path {
 			continue
 		}

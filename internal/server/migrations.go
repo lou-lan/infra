@@ -1,9 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/Masterminds/semver/v3"
+	"github.com/gin-gonic/gin"
+
 	"github.com/infrahq/infra/api"
+	"github.com/infrahq/infra/internal"
 	"github.com/infrahq/infra/uid"
 )
 
@@ -132,11 +137,6 @@ func (a *API) addResponseRewrites() {
 	// next migration...
 }
 
-func (a *API) addRewrites() {
-	a.addRequestRewrites()
-	a.addResponseRewrites()
-}
-
 // addRedirects for API endpoints that have moved to a different path
 func (a *API) addRedirects() {
 	addRedirect(a, http.MethodGet, "/v1/identities", "/v1/users", "0.12.2")
@@ -190,6 +190,45 @@ func (a *API) addRedirects() {
 	addRedirect(a, http.MethodGet, "/v1/providers/:id", "/api/providers/:id", "0.12.2")
 
 	addRedirect(a, http.MethodGet, "/v1/version", "/api/version", "0.12.2")
+
+	next := apiMigration{
+		method:   http.MethodGet,
+		path:     "/api/users/:id/groups",
+		version:  "0.13.1",
+		redirect: "/api/groups",
+	}
+	next.redirectHandler = func(c *gin.Context) {
+		// TODO: do this outside the func
+		migrationVersion, err := semver.NewVersion("0.13.1")
+		if err != nil {
+			panic(err) // dev mistake
+		}
+
+		if !rewriteRequired(c, migrationVersion) {
+			c.Next()
+			return
+		}
+
+		userID := c.Param("id")
+		if userID == "" {
+			sendAPIError(c, internal.ErrNotFound)
+			return
+		}
+
+		fmt.Printf("Applying special path=%v from=%v to=%v\n",
+			c.Request.URL.Path, next.path, next.redirect)
+
+		c.Request.URL.Path = next.redirect
+		c.Request.URL.RawQuery = "?userID=" + userID
+
+		id, _ := uid.Parse([]byte(userID))
+
+		rebuildRequest(c, api.ListGroupsRequest{UserID: id})
+		c.Next()
+	}
+
+	updateRedirectMigrations(a, next)
+	a.migrations = append(a.migrations, next)
 }
 
 type identityGrant struct {
