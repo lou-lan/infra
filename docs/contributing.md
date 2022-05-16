@@ -62,7 +62,7 @@ Example `values.yaml` files:
 # example values.yaml
 server:
   config:
-    identities:
+    users:
       - name: admin@local.dev
         password: password
 
