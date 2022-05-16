@@ -49,48 +49,52 @@ func createAccessKeyWithExtensionDeadline(t *testing.T, db *gorm.DB, ttl, exensi
 }
 
 func TestCheckAccessKeySecret(t *testing.T) {
-	db := setup(t)
-	body, _ := createAccessKey(t, db, time.Hour*5)
+	runDBTests(t, func(t *testing.T, db *gorm.DB) {
+		body, _ := createAccessKey(t, db, time.Hour*5)
 
-	_, err := ValidateAccessKey(db, body)
-	assert.NilError(t, err)
+		_, err := ValidateAccessKey(db, body)
+		assert.NilError(t, err)
 
-	random := generate.MathRandom(models.AccessKeySecretLength)
-	authorization := fmt.Sprintf("%s.%s", strings.Split(body, ".")[0], random)
+		random := generate.MathRandom(models.AccessKeySecretLength)
+		authorization := fmt.Sprintf("%s.%s", strings.Split(body, ".")[0], random)
 
-	_, err = ValidateAccessKey(db, authorization)
-	assert.Error(t, err, "access key invalid secret")
+		_, err = ValidateAccessKey(db, authorization)
+		assert.Error(t, err, "access key invalid secret")
+	})
 }
 
 func TestDeleteAccessKey(t *testing.T) {
-	db := setup(t)
-	_, token := createAccessKey(t, db, time.Minute*5)
+	runDBTests(t, func(t *testing.T, db *gorm.DB) {
+		_, token := createAccessKey(t, db, time.Minute*5)
 
-	_, err := GetAccessKey(db, ByID(token.ID))
-	assert.NilError(t, err)
+		_, err := GetAccessKey(db, ByID(token.ID))
+		assert.NilError(t, err)
 
-	err = DeleteAccessKey(db, token.ID)
-	assert.NilError(t, err)
+		err = DeleteAccessKey(db, token.ID)
+		assert.NilError(t, err)
 
-	_, err = GetAccessKey(db, ByID(token.ID))
-	assert.Error(t, err, "record not found")
+		_, err = GetAccessKey(db, ByID(token.ID))
+		assert.Error(t, err, "record not found")
 
-	err = DeleteAccessKeys(db, ByID(token.ID))
-	assert.NilError(t, err)
+		err = DeleteAccessKeys(db, ByID(token.ID))
+		assert.NilError(t, err)
+	})
 }
 
 func TestCheckAccessKeyExpired(t *testing.T) {
-	db := setup(t)
-	body, _ := createAccessKey(t, db, -1*time.Hour)
+	runDBTests(t, func(t *testing.T, db *gorm.DB) {
+		body, _ := createAccessKey(t, db, -1*time.Hour)
 
-	_, err := ValidateAccessKey(db, body)
-	assert.Error(t, err, "token expired")
+		_, err := ValidateAccessKey(db, body)
+		assert.Error(t, err, "token expired")
+	})
 }
 
 func TestCheckAccessKeyPastExtensionDeadline(t *testing.T) {
-	db := setup(t)
-	body, _ := createAccessKeyWithExtensionDeadline(t, db, 1*time.Hour, -1*time.Hour)
+	runDBTests(t, func(t *testing.T, db *gorm.DB) {
+		body, _ := createAccessKeyWithExtensionDeadline(t, db, 1*time.Hour, -1*time.Hour)
 
-	_, err := ValidateAccessKey(db, body)
-	assert.Error(t, err, "token extension deadline exceeded")
+		_, err := ValidateAccessKey(db, body)
+		assert.Error(t, err, "token extension deadline exceeded")
+	})
 }
