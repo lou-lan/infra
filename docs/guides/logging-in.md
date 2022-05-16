@@ -44,7 +44,8 @@ sudo dnf install infra
 infra login SERVER
 ```
 
-> **Don't know your Infra server?<br />** Ask your Infra team for the hostname that you should use to login.
+> **Don't know your Infra server?**
+> Ask your Infra team for the hostname that you should use to login.
 
 ## See what you can access
 

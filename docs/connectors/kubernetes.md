@@ -1,8 +1,6 @@
 # Kubernetes
 
-## Installing the connector
-
-### Install the connector via `helm`
+## Install the connector
 
 In order to add connectors to Infra, you will need to set three pieces of information:
 

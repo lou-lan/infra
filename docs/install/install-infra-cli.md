@@ -4,40 +4,40 @@ position: 1
 
 # Install Infra CLI
 
-## macOS
+## Install the Infra CLI
 
-```bash
+{% tabs %}
+{% tab label="macOS" %}
+```
 brew install infrahq/tap/infra
 ```
-
 You may need to perform `brew link` if your symlinks are not working.
-```bash
+```
 brew link infrahq/tap/infra
 ```
-
-## Windows
-
+{% /tab %}
+{% tab label="Windows" %}
 ```powershell
 scoop bucket add infrahq https://github.com/infrahq/scoop.git
 scoop install infra
 ```
-
-## Linux
-
-### Ubuntu & Debian
-
-```bash
+{% /tab %}
+{% tab label="Linux" %}
+```
+# Ubuntu & Debian
 echo 'deb [trusted=yes] https://apt.fury.io/infrahq/ /' | sudo tee /etc/apt/sources.list.d/infrahq.list
 sudo apt update
 sudo apt install infra
 ```
-
-### Fedora & Red Hat Enterprise Linux
-```bash
+```
+# Fedora & Red Hat Enterprise Linux
 sudo dnf config-manager --add-repo https://yum.fury.io/infrahq/
 sudo dnf install infra
 ```
+{% /tab %}
+{% /tabs %}
 
-## Upgrading
+
+## Upgrading the Infra CLI
 
 See [Upgrading Infra CLI](../install/upgrading.md#upgrading-infra-cli)

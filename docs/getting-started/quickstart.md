@@ -5,11 +5,7 @@ position: 2
 
 # Quickstart
 
-In this quickstart we'll set up Infra to manage single sign-on to Kubernetes:
-* Install Infra CLI
-* Deploy Infra
-* Connect a Kubernetes cluster
-* Create a user and grant them view (read-only) access to the cluster
+In this quickstart we'll set up Infra to manage user access to a Kubernetes cluster.
 
 ## Prerequisites
 
@@ -23,10 +19,6 @@ In this quickstart we'll set up Infra to manage single sign-on to Kubernetes:
 {% tab label="macOS" %}
 ```
 brew install infrahq/tap/infra
-```
-You may need to perform `brew link` if your symlinks are not working.
-```
-brew link infrahq/tap/infra
 ```
 {% /tab %}
 {% tab label="Windows" %}
@@ -67,7 +59,9 @@ Next, find the hostname for the Infra server you just deployed:
 kubectl get service infra-server -o jsonpath="{.status.loadBalancer.ingress[*]['ip', 'hostname']}" -w
 ```
 
-> Note: It may take a few minutes for the LoadBalancer to be provisioned for the Infra server
+{% callout type="info" %}
+It may take a few minutes for the LoadBalancer to be provisioned for the Infra server
+{% /callout %}
 
 Login to the Infra server using the hostname above and follow the prompt to create your admin account:
 
@@ -102,7 +96,9 @@ helm upgrade --install infra-connector infrahq/infra \
   --set connector.config.skipTLSVerify=true
 ```
 
-| Note: it may take a few minutes for the cluster to connect. You can verify the connection by running `infra destinations list`
+{% callout type="info" %}
+It may take a few minutes for the cluster to connect. You can verify the connection by running `infra destinations list`
+{% /callout %}
 
 ## Add a user and grant access to the cluster
 
@@ -112,7 +108,9 @@ Next, add a user:
 infra users add user@example.com
 ```
 
-| Note: Infra will provide you a one-time password. Please note this password for step 5.
+{% callout type="info" %}
+Infra will provide you a one-time password. Please note this password for the next step.
+{% /callout %}
 
 Grant this user read-only access to the Kubernetes cluster you just connected to Infra:
 
