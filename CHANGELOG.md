@@ -1,5 +1,22 @@
 # Changelog
 
+### [0.13.1](https://github.com/infrahq/infra/compare/v0.13.0...v0.13.1) (2022-05-17)
+
+
+### Bug Fixes
+
+* add singular alias for users ([#1951](https://github.com/infrahq/infra/issues/1951)) ([afc482a](https://github.com/infrahq/infra/commit/afc482a95a7e7549995016ea2cf17eeb71b6afbf))
+* client requests should time out ([#1966](https://github.com/infrahq/infra/issues/1966)) ([98aa32f](https://github.com/infrahq/infra/commit/98aa32ffb0966cc4438b5b7392bf8e72f9a4ca1c))
+* docker image build sets correct version string ([2fbef36](https://github.com/infrahq/infra/commit/2fbef3628d5189a0637e68f350a0ab6174b3da8e))
+* documentation fixes ([#1960](https://github.com/infrahq/infra/issues/1960)) ([10cb28f](https://github.com/infrahq/infra/commit/10cb28f2043d3da29a8bead8c0a1343e6b6f1949))
+* openapi gen should not set -dev version in release branches ([0463e28](https://github.com/infrahq/infra/commit/0463e2836226a14953bb98ff7930e3411b8d61bf))
+* optional grant role ([b8f281d](https://github.com/infrahq/infra/commit/b8f281d5dabe0bdb4dabeb925a2af2aa415c45a8))
+* readme-compatible openapi spec ([#1954](https://github.com/infrahq/infra/issues/1954)) ([034b110](https://github.com/infrahq/infra/commit/034b11082edbd59067c954f03d731a85291c881f))
+* remove BUILDVERSION from makefile ([aba1048](https://github.com/infrahq/infra/commit/aba10484da46358a347c61bef3316ea6099a4115))
+* remove infra user role from docs ([#1961](https://github.com/infrahq/infra/issues/1961)) ([3033a3b](https://github.com/infrahq/infra/commit/3033a3b61730b93a4739a18f8093153f02bef08d))
+* set default key name from identity and key id ([#1985](https://github.com/infrahq/infra/issues/1985)) ([402b6c7](https://github.com/infrahq/infra/commit/402b6c7f68bd00eaf0018c9f2e6ecdbd8b03477b))
+* use GITHUB_HEAD_REF instead of GITHUB_REF_NAME ([c39cbc0](https://github.com/infrahq/infra/commit/c39cbc08d4278760387de5bf2e425320d2d653a0))
+
 ## [0.13.0](https://github.com/infrahq/infra/compare/v0.12.2...v0.13.0) (2022-05-12)
 
 
